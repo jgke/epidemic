@@ -8,10 +8,7 @@ defmodule Simulator do
           0..person_count,
           [seed],
           fn (_, prev) ->
-            {next, _} = :rand.uniform_s(
-              round(:math.pow(2, 32) - 1),
-              :rand.seed(:exsss, Enum.at(prev, 0))
-            )
+            {next, _} = :rand.uniform_s(round(:math.pow(2, 32) - 1), :rand.seed(:exsss, Enum.at(prev, 0)))
             [next | prev]
           end
         )
@@ -53,14 +50,14 @@ defmodule Simulator do
     )
   end
 
-  def infected_count(self) do
+  defp get_count(self, cb) do
     Agent.get(
       self,
       fn state ->
         Enum.map(
           state[:victims],
           fn victim ->
-            if Person.is_infected(victim) do
+            if cb.(victim) do
               1
             else
               0
@@ -70,5 +67,17 @@ defmodule Simulator do
         |> Enum.sum
       end
     )
+  end
+
+  def infected_count(self) do
+    get_count(self, fn victim -> Person.is_infected(victim) end)
+  end
+
+  def dead_count(self) do
+    get_count(self, fn victim -> Person.is_dead(victim) end)
+  end
+
+  def immune_count(self) do
+    get_count(self, fn victim -> Person.is_immune(victim) end)
   end
 end
