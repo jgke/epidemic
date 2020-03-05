@@ -2,8 +2,8 @@ defmodule Person do
   def start_link(seed) do
     Agent.start_link(
       fn ->
+        :rand.seed(:exsss, seed)
         %{
-          seed: :rand.seed(:exsss, seed),
           connections: [],
           infected: false,
           cured_at: 0,
@@ -23,9 +23,9 @@ defmodule Person do
       self,
       fn state ->
         if not state[:immune] and not state[:infected] do
-          {roll, next} = :rand.uniform_s(state[:seed])
+          roll = :rand.uniform()
           if probability > roll do
-            %{state | infected: true, cured_at: 14, seed: next}
+            %{state | infected: true, cured_at: 14}
           else
             state
           end
@@ -36,12 +36,12 @@ defmodule Person do
     )
   end
 
-  defp step_infection(state, seed) do
-    {roll, next} = :rand.uniform_s(seed)
+  defp step_infection(state) do
+    roll = :rand.uniform()
     if roll > 0.999 do
       %{state | dead: true}
     else
-      %{state | cured_at: state[:cured_at] - 1, seed: next}
+      %{state | cured_at: state[:cured_at] - 1}
     end
   end
 
@@ -54,11 +54,11 @@ defmodule Person do
           state[:infected] and state[:cured_at] == 0 ->
             %{state | infected: false, immune: true}
           state[:infected] and length(state[:connections]) > 0 ->
-            {roll, next} = :rand.uniform_s(length(state[:connections]), state[:seed])
+            roll = :rand.uniform(length(state[:connections]))
             Person.infect(Enum.at(state[:connections], roll - 1), 1)
-            step_infection(state, next)
+            step_infection(state)
           state[:infected] ->
-            step_infection(state, state[:seed])
+            step_infection(state)
           true -> state
         end
       end

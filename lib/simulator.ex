@@ -4,29 +4,21 @@ defmodule Simulator do
   def start_link(seed, person_count, link_count) do
     Agent.start_link(
       fn ->
-        seeds = Enum.reduce(
-          0..person_count,
-          [seed],
-          fn (_, prev) ->
-            {next, _} = :rand.uniform_s(round(:math.pow(2, 32) - 1), :rand.seed(:exsss, Enum.at(prev, 0)))
-            [next | prev]
-          end
-        )
-        {:ok, first_pid} = Person.start_link(seed)
+        :rand.seed(:exsss, seed)
         victims_list = Enum.map(
-          seeds,
+          0..person_count,
           fn (seed) ->
-            {:ok, pid} = Person.start_link(seed)
+            {:ok, pid} = Person.start_link(:rand.uniform(round(:math.pow(2, 32))))
             pid
           end
         )
-        victims = 1..length(victims_list)
+        victims = 0..length(victims_list)
                   |> Stream.zip(victims_list)
                   |> Enum.into(%{})
 
         for victim <- victims_list do
-          for peer <- Enum.map(0..link_count, fn _ -> :rand.uniform(person_count) end)
-                      |> Enum.map(&Map.get(victims, &1)) do
+          for peer <- Enum.map(0..link_count, fn _ -> :rand.uniform(person_count) - 1 end)
+                      |> Enum.map(fn pos -> Map.get(victims, pos) end) do
             if victim != peer do
               Person.add_link(victim, peer)
             end

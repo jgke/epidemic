@@ -2,8 +2,12 @@ defmodule EpidemicTest do
   use ExUnit.Case
   doctest Epidemic
 
+  defp get_seed() do
+    ExUnit.configuration()[:seed]
+  end
+
   test "Infecting works with 100% probability" do
-    {:ok, pid} = Person.start_link(ExUnit.configuration()[:seed])
+    {:ok, pid} = Person.start_link(get_seed())
     IO.inspect(pid)
     false = Person.is_infected(pid)
     Person.infect(pid, 1)
@@ -11,7 +15,7 @@ defmodule EpidemicTest do
   end
 
   test "Immune persons are not re-infected" do
-    {:ok, pid} = Person.start_link(ExUnit.configuration()[:seed])
+    {:ok, pid} = Person.start_link(get_seed())
 
     Person.infect(pid, 1)
 
@@ -25,8 +29,8 @@ defmodule EpidemicTest do
   end
 
   test "Persons can infect other people" do
-    {:ok, p1} = Person.start_link(ExUnit.configuration()[:seed])
-    {:ok, p2} = Person.start_link(ExUnit.configuration()[:seed])
+    {:ok, p1} = Person.start_link(get_seed())
+    {:ok, p2} = Person.start_link(get_seed())
 
     Person.add_link(p1, p2)
 
@@ -36,12 +40,13 @@ defmodule EpidemicTest do
     true = Person.is_infected(p2)
   end
 
+
   @tag timeout: 120_000
   test "Simulator runs" do
     IO.inspect("Creating simulator")
     person_count = 100_000
     link_count = 10
-    {:ok, pid} = Simulator.start_link(ExUnit.configuration()[:seed], person_count, link_count)
+    {:ok, pid} = Simulator.start_link(get_seed(), person_count, link_count)
     IO.inspect("Interacting")
     for step <- 1..45 do
       infected = Simulator.infected_count(pid)
