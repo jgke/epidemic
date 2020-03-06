@@ -14,8 +14,8 @@ defmodule Person do
     )
   end
 
-  def add_link(self, person) do
-    Agent.update(self, &Map.put(&1, :connections, [person | Map.get(&1, :connections)]))
+  def add_link(self, person, probability) do
+    Agent.update(self, &Map.put(&1, :connections, [{person, probability} | Map.get(&1, :connections)]))
   end
 
   def infect(self, probability) do
@@ -53,12 +53,12 @@ defmodule Person do
           state[:dead] -> state
           state[:infected] and state[:cured_at] == 0 ->
             %{state | infected: false, immune: true}
-          state[:infected] and length(state[:connections]) > 0 ->
-            roll = :rand.uniform(length(state[:connections]))
-            Person.infect(Enum.at(state[:connections], roll - 1), 1)
-            step_infection(state)
           state[:infected] ->
-            step_infection(state)
+               for {connection, probability} <- state[:connections] do
+                 Person.infect(connection, probability)
+               end
+
+               step_infection(state)
           true -> state
         end
       end
@@ -76,19 +76,4 @@ defmodule Person do
   def is_immune(self) do
     Agent.get(self, &(not Map.get(&1, :dead) and Map.get(&1, :immune)))
   end
-
-  #defp loop(state) do
-  #  receive do
-  #    {:add_link, person} ->
-  #      loop(%{state | connections: [person | state[:connections]]})
-
-  #    {:interact} ->
-
-  #    {:infect, probability} ->
-
-  #    {:get_state, caller} ->
-  #      send(caller, state)
-  #      loop(state)
-  #  end
-  #end
 end

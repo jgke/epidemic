@@ -7,7 +7,7 @@ defmodule Simulator do
         :rand.seed(:exsss, seed)
         victims_list = Enum.map(
           0..person_count,
-          fn (seed) ->
+          fn _ ->
             {:ok, pid} = Person.start_link(:rand.uniform(round(:math.pow(2, 32))))
             pid
           end
@@ -16,16 +16,20 @@ defmodule Simulator do
                   |> Stream.zip(victims_list)
                   |> Enum.into(%{})
 
-        for victim <- victims_list do
-          for peer <- Enum.map(0..link_count, fn _ -> :rand.uniform(person_count) - 1 end)
-                      |> Enum.map(fn pos -> Map.get(victims, pos) end) do
+        for {i, victim} <- Enum.zip(0..length(victims_list), victims_list) do
+          for {peer_i, peer} <- Enum.map(0..link_count, fn _ -> :rand.uniform(person_count) - 1 end)
+                      |> Enum.map(fn pos -> {pos,  Map.get(victims, pos)} end) do
             if victim != peer do
-              Person.add_link(victim, peer)
+              delta = abs(i - peer_i)
+              probability = person_count / (:math.pow(delta, 2))
+              Person.add_link(victim, peer, probability)
             end
           end
         end
 
-        Person.infect(Enum.at(victims_list, 0), 1)
+        for i <- 0..min(20, length(victims_list)) do
+          Person.infect(Enum.at(victims_list, i), 1)
+        end
         %{victims: victims_list}
       end
     )
