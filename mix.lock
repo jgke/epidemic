@@ -1,0 +1,4 @@
+%{
+  "graphvix": {:hex, :graphvix, "1.0.0", "e1c2e8f2950c0ff43e64f1d3788d095ed7481b29cccaf63f80b2fdf751c6cdd3", [:mix], [], "hexpm", "87ea2fd6c464b434eeafc8bf6fd95d8371e24eac687ad0ef2b7929efd9076d64"},
+  "stream_data": {:hex, :stream_data, "0.4.3", "62aafd870caff0849a5057a7ec270fad0eb86889f4d433b937d996de99e3db25", [:mix], [], "hexpm", "7dafd5a801f0bc897f74fcd414651632b77ca367a7ae4568778191fc3bf3a19a"},
+}

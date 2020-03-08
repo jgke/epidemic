@@ -16,21 +16,22 @@ defmodule Simulator do
                   |> Stream.zip(victims_list)
                   |> Enum.into(%{})
 
-        for {i, victim} <- Enum.zip(0..length(victims_list), victims_list) do
-          for {peer_i, peer} <- Enum.map(0..link_count, fn _ -> :rand.uniform(person_count) - 1 end)
-                      |> Enum.map(fn pos -> {pos,  Map.get(victims, pos)} end) do
-            if victim != peer do
-              delta = abs(i - peer_i)
-              probability = person_count / (:math.pow(delta, 2))
-              Person.add_link(victim, peer, probability)
-            end
-          end
+        relations = 0..(length(victims_list)-1)
+                    |> Enum.map(fn a -> {a, 0..link_count} end)
+                    |> Enum.flat_map(fn {a, bs} -> Enum.map(bs, fn _ -> {a, :rand.uniform(person_count) - 1} end) end)
+                    |> Enum.uniq()
+                    |> Enum.filter(fn {a, b} -> a != b end)
+
+        for {a, b} <- relations do
+          delta = abs(a - b)
+          probability = person_count / (:math.pow(delta, 2))
+          Person.add_link(victims[a], victims[b], probability)
         end
 
-        for i <- 0..min(20, length(victims_list)) do
-          Person.infect(Enum.at(victims_list, i), 1)
+        for i <- 0..min(20, length(victims_list)-1) do
+          Person.infect(victims[i], 1)
         end
-        %{victims: victims_list}
+        %{victims: victims_list, relations: relations}
       end
     )
   end
@@ -75,5 +76,9 @@ defmodule Simulator do
 
   def immune_count(self) do
     get_count(self, fn victim -> Person.is_immune(victim) end)
+  end
+
+  def get_graph(self) do
+    Agent.get(self, &Map.get(&1, :relations))
   end
 end
