@@ -1,11 +1,15 @@
 defmodule Epidemic do
   def draw_graph(pid, filename) do
-    graph = Simulator.get_graph(pid)
+    {vertices, graph} = Simulator.get_graph(pid)
     {vertice_graph, nodes} = Enum.reduce(
-      0..person_count - 1,
+      vertices,
       {Graphvix.Graph.new(), %{}},
-      fn (person_i, {graph, nodes}) ->
-        {g, node} = Graphvix.Graph.add_vertex(graph, person_i)
+      fn ({person_i, infected}, {graph, nodes}) ->
+        {g, node} = if infected do
+          Graphvix.Graph.add_vertex(graph, person_i, style: "filled", fillcolor: "red")
+        else
+          Graphvix.Graph.add_vertex(graph, person_i)
+        end
         {g, Map.put(nodes, person_i, node)}
       end
     )
@@ -13,7 +17,7 @@ defmodule Epidemic do
       graph,
       vertice_graph,
       fn ({a, b}, graph) ->
-        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b])
+        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b], dir: "none")
         graph
       end
     )
@@ -40,9 +44,8 @@ defmodule Epidemic do
         } deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%"
       )
       Simulator.step(pid)
+      draw_graph(pid, "out/#{step |> Integer.to_string |> String.pad_leading(3, "0")}_graph")
     end
     IO.inspect("Done")
-
-    draw_graph(pid, "graph")
   end
 end
