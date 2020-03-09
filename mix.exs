@@ -24,8 +24,8 @@ defmodule Epidemic.MixProject do
     [
       {:graphvix, "~> 1.0.0"},
       {:stream_data, "~> 0.1", only: [:dev, :test, :prod]},
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:exprof, "~> 0.2.0"},
+      {:flow, "~> 1.0"}
     ]
   end
 

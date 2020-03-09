@@ -19,7 +19,12 @@ defmodule Epidemic do
       graph,
       vertice_graph,
       fn ({a, b}, graph) ->
-        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b], dir: "none", color: "gray80")
+        color = if vertices[a] == :infected or vertices[b] == :infected do
+          "black"
+        else
+          "gray80"
+        end
+        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b], dir: "none", color: color)
         graph
       end
     )
@@ -27,14 +32,16 @@ defmodule Epidemic do
   end
 
   def main(args \\ []) do
-    IO.inspect("Creating simulator")
     {person_count_sqrt, _} = Integer.parse(Enum.at(args, 0))
-    person_count = round(:math.pow(person_count_sqrt, 2)) + 1
+    person_count = round(:math.pow(person_count_sqrt, 2))
     {link_count, _} = Integer.parse(Enum.at(args, 1))
     {steps, _} = Integer.parse(Enum.at(args, 2))
+    {infection_rate, _} = Float.parse(Enum.at(args, 3))
+    output_graph = Enum.at(args, 4) == "true"
 
-    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), person_count_sqrt, link_count)
-    IO.inspect("Interacting")
+    IO.puts("Creating simulator with #{person_count} nodes")
+    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count)
+    IO.puts("\nInteracting")
     for step <- 1..steps do
       infected = Simulator.infected_count(pid)
       dead = Simulator.dead_count(pid)
@@ -47,8 +54,10 @@ defmodule Epidemic do
         } deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%"
       )
       Simulator.step(pid)
-      draw_graph(pid, "out/#{step |> Integer.to_string |> String.pad_leading(3, "0")}_graph")
+      if output_graph do
+        draw_graph(pid, "out/#{step |> Integer.to_string |> String.pad_leading(3, "0")}_graph")
+      end
     end
-    IO.inspect("Done")
+    IO.puts("Done")
   end
 end

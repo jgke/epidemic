@@ -11,11 +11,11 @@ defmodule Simulator do
     {dx, dy}
   end
 
-  def start_link(seed, person_count, link_probability) do
+  def start_link(seed, infection_rate, person_count, link_probability) do
     Agent.start_link(
       fn ->
         :rand.seed(:exsss, seed)
-        victim_count = round(:math.pow(person_count, 2))
+        victim_count = person_count * person_count - 1
         victims_list = Enum.map(
           0..victim_count,
           fn _ ->
@@ -33,23 +33,25 @@ defmodule Simulator do
           |> Enum.flat_map(fn {a, bs} ->
             Enum.map(bs,
               fn b ->
+                if rem(a, 500) == 0 and b == 0 do
+                  IO.puts("#{a}/#{victim_count + 1}")
+                end
                 {dx, dy} = distance(person_count, a, b)
                 {a, b, dx < :rand.normal() * link_probability, dy < :rand.normal() * link_probability}
               end)
           end)
           |> Enum.filter(fn {a, b, px, py} -> a != b and px and py end)
           |> Enum.map(fn {a, b, _, _} -> {a, b} end)
-
-        IO.inspect("Average relation count: #{length(relations) / victim_count}")
+        IO.puts("#{victim_count + 1}/#{victim_count + 1}")
 
         for {a, b} <- relations do
           {dx, dy} = distance(person_count, a, b)
           delta = round(:math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2)))
-          probability = person_count / (:math.pow(delta, 2)) / 10
+          probability = (person_count / (100 * delta)) * infection_rate
           Person.add_link(victims[a], victims[b], probability)
         end
 
-        for i <- 0..min(20, length(victims_list) - 1) do
+        for i <- 0..min(5, length(victims_list) - 1) do
           Person.infect(victims[i], 1)
         end
         %{victims: victims, relations: relations}

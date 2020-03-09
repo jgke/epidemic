@@ -44,9 +44,10 @@ defmodule EpidemicTest do
   @tag timeout: 120_000
   test "Simulator runs" do
     IO.inspect("Creating simulator")
+    infection_rate = 1
     person_count = 485
     link_count = 5
-    {:ok, pid} = Simulator.start_link(get_seed(), 22, link_count)
+    {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, 22, link_count)
     IO.inspect("Interacting")
     for step <- 1..120 do
       infected = Simulator.infected_count(pid)
