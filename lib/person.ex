@@ -66,14 +66,23 @@ defmodule Person do
   end
 
   def is_infected(self) do
-    Agent.get(self, &(not Map.get(&1, :dead) and Map.get(&1, :infected)))
+    get_state(self) == :infected
   end
 
   def is_dead(self) do
-    Agent.get(self, &Map.get(&1, :dead))
+    get_state(self) == :dead
   end
 
   def is_immune(self) do
-    Agent.get(self, &(not Map.get(&1, :dead) and Map.get(&1, :immune)))
+    get_state(self) == :immune
+  end
+
+  def get_state(self) do
+    Agent.get(self, &(cond do
+                        Map.get(&1, :dead) -> :dead
+                        Map.get(&1, :immune) -> :immune
+                        Map.get(&1, :infected) -> :infected
+                        true -> :healthy
+                      end))
   end
 end

@@ -105,7 +105,7 @@ defmodule Simulator do
       &{
         (for {k, v} <- Map.get(&1, :victims),
              into: %{},
-             do: {k, Person.is_infected(v)}),
+             do: {k, Person.get_state(v)}),
         Map.get(&1, :relations)
       }
     )

@@ -4,12 +4,14 @@ defmodule Epidemic do
     {vertice_graph, nodes} = Enum.reduce(
       vertices,
       {Graphvix.Graph.new() |> Graphvix.Graph.set_graph_property(:outputorder, "edgesfirst"), %{}},
-      fn ({person_i, infected}, {graph, nodes}) ->
-        {g, node} = if infected do
-          Graphvix.Graph.add_vertex(graph, "", shape: "circle", style: "filled", fillcolor: "red")
-        else
-          Graphvix.Graph.add_vertex(graph, "", shape: "circle", style: "filled", fillcolor: "white")
+      fn ({person_i, state}, {graph, nodes}) ->
+        color = case state do
+          :infected -> "red"
+          :immune -> "gray"
+          :healthy -> "white"
+          :dead -> "black"
         end
+        {g, node} = Graphvix.Graph.add_vertex(graph, "", shape: "circle", style: "filled", fillcolor: color)
         {g, Map.put(nodes, person_i, node)}
       end
     )
