@@ -1,12 +1,23 @@
 defmodule Simulator do
   @moduledoc false
 
-  def start_link(seed, person_count, link_count) do
+  def distance(person_count, a, b) do
+    x1 = rem(a, person_count)
+    y1 = div(a, person_count)
+    x2 = rem(b, person_count)
+    y2 = div(b, person_count)
+    dx = abs(x1 - x2)
+    dy = abs(y1 - y2)
+    {dx, dy}
+  end
+
+  def start_link(seed, person_count, link_probability) do
     Agent.start_link(
       fn ->
         :rand.seed(:exsss, seed)
+        victim_count = round(:math.pow(person_count, 2))
         victims_list = Enum.map(
-          0..person_count,
+          0..victim_count,
           fn _ ->
             {:ok, pid} = Person.start_link(:rand.uniform(round(:math.pow(2, 32))))
             pid
@@ -16,15 +27,25 @@ defmodule Simulator do
                   |> Stream.zip(victims_list)
                   |> Enum.into(%{})
 
-        relations = 0..(length(victims_list) - 1)
-                    |> Enum.map(fn a -> {a, 0..link_count} end)
-                    |> Enum.flat_map(fn {a, bs} -> Enum.map(bs, fn _ -> {a, :rand.uniform(person_count) - 1} end) end)
-                    |> Enum.uniq()
-                    |> Enum.filter(fn {a, b} -> a != b end)
+        relations =
+          0..victim_count
+          |> Enum.map(fn a -> {a, 0..victim_count} end)
+          |> Enum.flat_map(fn {a, bs} ->
+            Enum.map(bs,
+              fn b ->
+                {dx, dy} = distance(person_count, a, b)
+                {a, b, dx < :rand.normal() * link_probability, dy < :rand.normal() * link_probability}
+              end)
+          end)
+          |> Enum.filter(fn {a, b, px, py} -> a != b and px and py end)
+          |> Enum.map(fn {a, b, _, _} -> {a, b} end)
+
+        IO.inspect("Average relation count: #{length(relations) / victim_count}")
 
         for {a, b} <- relations do
-          delta = abs(a - b)
-          probability = person_count / (:math.pow(delta, 2))
+          {dx, dy} = distance(person_count, a, b)
+          delta = round(:math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2)))
+          probability = person_count / (:math.pow(delta, 2)) / 10
           Person.add_link(victims[a], victims[b], probability)
         end
 

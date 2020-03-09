@@ -3,12 +3,12 @@ defmodule Epidemic do
     {vertices, graph} = Simulator.get_graph(pid)
     {vertice_graph, nodes} = Enum.reduce(
       vertices,
-      {Graphvix.Graph.new(), %{}},
+      {Graphvix.Graph.new() |> Graphvix.Graph.set_graph_property(:outputorder, "edgesfirst"), %{}},
       fn ({person_i, infected}, {graph, nodes}) ->
         {g, node} = if infected do
-          Graphvix.Graph.add_vertex(graph, person_i, style: "filled", fillcolor: "red")
+          Graphvix.Graph.add_vertex(graph, "", shape: "circle", style: "filled", fillcolor: "red")
         else
-          Graphvix.Graph.add_vertex(graph, person_i)
+          Graphvix.Graph.add_vertex(graph, "", shape: "circle", style: "filled", fillcolor: "white")
         end
         {g, Map.put(nodes, person_i, node)}
       end
@@ -17,7 +17,7 @@ defmodule Epidemic do
       graph,
       vertice_graph,
       fn ({a, b}, graph) ->
-        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b], dir: "none")
+        {graph, _} = Graphvix.Graph.add_edge(graph, nodes[a], nodes[b], dir: "none", color: "gray80")
         graph
       end
     )
@@ -26,11 +26,12 @@ defmodule Epidemic do
 
   def main(args \\ []) do
     IO.inspect("Creating simulator")
-    {person_count, _} = Integer.parse(Enum.at(args, 0))
+    {person_count_sqrt, _} = Integer.parse(Enum.at(args, 0))
+    person_count = round(:math.pow(person_count_sqrt, 2)) + 1
     {link_count, _} = Integer.parse(Enum.at(args, 1))
     {steps, _} = Integer.parse(Enum.at(args, 2))
 
-    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), person_count, link_count)
+    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), person_count_sqrt, link_count)
     IO.inspect("Interacting")
     for step <- 1..steps do
       infected = Simulator.infected_count(pid)
