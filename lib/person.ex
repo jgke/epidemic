@@ -4,7 +4,7 @@ defmodule Person do
       fn ->
         :rand.seed(:exsss, seed)
         %{
-          connections: [],
+          connections: %{},
           infected: false,
           cured_at: 0,
           immune: false,
@@ -15,7 +15,7 @@ defmodule Person do
   end
 
   def add_link(self, person, probability) do
-    Agent.update(self, &Map.put(&1, :connections, [{person, probability} | Map.get(&1, :connections)]))
+    Agent.update(self, &Map.put(&1, :connections, Map.put(Map.get(&1, :connections), person, probability)))
   end
 
   def infect(self, probability) do
@@ -46,20 +46,16 @@ defmodule Person do
   end
 
   def interact(self) do
-    Agent.update(
+    Agent.get_and_update(
       self,
       fn state ->
         cond do
-          state[:dead] -> state
+          state[:dead] -> {[], state}
           state[:infected] and state[:cured_at] == 0 ->
-            %{state | infected: false, immune: true}
+            {[], %{state | infected: false, immune: true}}
           state[:infected] ->
-               for {connection, probability} <- state[:connections] do
-                 Person.infect(connection, probability)
-               end
-
-               step_infection(state)
-          true -> state
+            {state[:connections], step_infection(state)}
+          true -> {[], state}
         end
       end
     )
@@ -78,11 +74,14 @@ defmodule Person do
   end
 
   def get_state(self) do
-    Agent.get(self, &(cond do
-                        Map.get(&1, :dead) -> :dead
-                        Map.get(&1, :immune) -> :immune
-                        Map.get(&1, :infected) -> :infected
-                        true -> :healthy
-                      end))
+    Agent.get(
+      self,
+      &(cond do
+          Map.get(&1, :dead) -> :dead
+          Map.get(&1, :immune) -> :immune
+          Map.get(&1, :infected) -> :infected
+          true -> :healthy
+        end)
+    )
   end
 end

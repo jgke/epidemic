@@ -36,28 +36,30 @@ defmodule EpidemicTest do
 
     false = Person.is_infected(p2)
     Person.infect(p1, 1)
-    Person.interact(p1)
-    true = Person.is_infected(p2)
+    assert Person.interact(p1) == %{p2 => 1}
   end
 
 
   @tag timeout: 120_000
   test "Simulator runs" do
-    IO.inspect("Creating simulator")
+    IO.puts("Creating simulator")
     infection_rate = 1
-    person_count = 485
-    link_count = 5
-    {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, 22, link_count)
-    IO.inspect("Interacting")
+    person_count_sq = 70
+    person_count = person_count_sq * person_count_sq
+    link_count = 2
+    {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, person_count_sq, link_count)
+    IO.puts("Interacting")
     for step <- 1..120 do
       infected = Simulator.infected_count(pid)
-      dead = Simulator.dead_count(pid)
-      immune = Simulator.immune_count(pid)
-      death_rate = dead / (dead + immune + infected)
-      contact_rate = (dead + immune + infected) / person_count
-      IO.puts("Day #{step}: #{Float.round(contact_rate * 100, 2)}% have contacted disease, #{infected} infected persons, #{dead} deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%")
-      Simulator.step(pid)
+      if infected > 0 do   
+        dead = Simulator.dead_count(pid)
+        immune = Simulator.immune_count(pid)
+        death_rate = dead / (dead + immune + infected)
+        contact_rate = (dead + immune + infected) / person_count
+        IO.puts("Day #{step}: #{Float.round(contact_rate * 100, 2)}% have contacted disease, #{infected} infected persons, #{dead} deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%")
+        Simulator.step(pid)
+      end
     end
-    IO.inspect("Done")
+    IO.puts("Done")
   end
 end

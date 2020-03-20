@@ -3,7 +3,11 @@ defmodule Epidemic do
     {vertices, graph} = Simulator.get_graph(pid)
     {vertice_graph, nodes} = Enum.reduce(
       vertices,
-      {Graphvix.Graph.new() |> Graphvix.Graph.set_graph_property(:outputorder, "edgesfirst"), %{}},
+      {
+        Graphvix.Graph.new()
+        |> Graphvix.Graph.set_graph_property(:outputorder, "edgesfirst"),
+        %{}
+      },
       fn ({person_i, state}, {graph, nodes}) ->
         color = case state do
           :infected -> "red"
@@ -15,6 +19,7 @@ defmodule Epidemic do
         {g, Map.put(nodes, person_i, node)}
       end
     )
+
     complete_graph = Enum.reduce(
       graph,
       vertice_graph,
@@ -55,7 +60,14 @@ defmodule Epidemic do
       )
       Simulator.step(pid)
       if output_graph do
-        draw_graph(pid, "out/#{step |> Integer.to_string |> String.pad_leading(3, "0")}_graph")
+        draw_graph(
+          pid,
+          "out/#{
+            step
+            |> Integer.to_string
+            |> String.pad_leading(3, "0")
+          }_graph"
+        )
       end
     end
     IO.puts("Done")

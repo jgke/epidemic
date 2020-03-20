@@ -29,19 +29,22 @@ defmodule Simulator do
 
         relations =
           0..victim_count
-          |> Enum.map(fn a -> {a, 0..victim_count} end)
-          |> Enum.flat_map(fn {a, bs} ->
-            Enum.map(bs,
-              fn b ->
-                if rem(a, 500) == 0 and b == 0 do
-                  IO.puts("#{a}/#{victim_count + 1}")
-                end
-                {dx, dy} = distance(person_count, a, b)
-                {a, b, dx < :rand.normal() * link_probability, dy < :rand.normal() * link_probability}
-              end)
-          end)
-          |> Enum.filter(fn {a, b, px, py} -> a != b and px and py end)
-          |> Enum.map(fn {a, b, _, _} -> {a, b} end)
+          |> Flow.from_enumerable()
+          |> Flow.map(fn a -> {a, 0..victim_count} end)
+          |> Flow.flat_map(
+               fn {a, bs} ->
+                 Enum.map(
+                   bs,
+                   fn b ->
+                     {dx, dy} = distance(person_count, a, b)
+                     {a, b, dx < :rand.normal() * link_probability, dy < :rand.normal() * link_probability}
+                   end
+                 )
+               end
+             )
+          |> Flow.filter(fn {a, b, px, py} -> a != b and px and py end)
+          |> Flow.map(fn {a, b, _, _} -> {a, b} end)
+          |> Enum.to_list
         IO.puts("#{victim_count + 1}/#{victim_count + 1}")
 
         for {a, b} <- relations do
@@ -49,6 +52,7 @@ defmodule Simulator do
           delta = round(:math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2)))
           probability = (person_count / (100 * delta)) * infection_rate
           Person.add_link(victims[a], victims[b], probability)
+          Person.add_link(victims[b], victims[a], probability)
         end
 
         for i <- 0..min(5, length(victims_list) - 1) do
@@ -63,9 +67,10 @@ defmodule Simulator do
     Agent.get(
       self,
       fn state ->
-        for victim <- Map.values(state[:victims]) do
-          Person.interact(victim)
-        end
+        Map.values(state[:victims])
+        |> Enum.flat_map(&Person.interact/1)
+        |> Enum.map(fn {pid, p} -> Person.infect(pid, p) end)
+        :ok
       end
     )
   end
@@ -105,9 +110,13 @@ defmodule Simulator do
     Agent.get(
       self,
       &{
-        (for {k, v} <- Map.get(&1, :victims),
-             into: %{},
-             do: {k, Person.get_state(v)}),
+        Map.get(&1, :victims)
+        |> Enum.map(
+             fn {k, v} ->
+                {k, Person.get_state(v)}
+             end
+           )
+        |> Map.new,
         Map.get(&1, :relations)
       }
     )
