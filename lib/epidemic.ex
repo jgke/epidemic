@@ -45,8 +45,18 @@ defmodule Epidemic do
     output_graph = Enum.at(args, 4) == "true"
 
     IO.puts("Creating simulator with #{person_count} nodes")
-    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count)
+    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count, 1)
     IO.puts("\nInteracting")
+    if output_graph do
+      draw_graph(
+        pid,
+        "out/#{
+          0
+          |> Integer.to_string
+          |> String.pad_leading(3, "0")
+        }_graph"
+      )
+    end
     for step <- 1..steps do
       infected = Simulator.infected_count(pid)
       dead = Simulator.dead_count(pid)

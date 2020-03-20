@@ -11,7 +11,7 @@ defmodule Simulator do
     {dx, dy}
   end
 
-  def start_link(seed, infection_rate, person_count, link_probability) do
+  def start_link(seed, infection_rate, person_count, link_probability, initial_infected) do
     Agent.start_link(
       fn ->
         :rand.seed(:exsss, seed)
@@ -43,22 +43,21 @@ defmodule Simulator do
                end
              )
           |> Flow.filter(fn {a, b, px, py} -> a != b and px and py end)
-          |> Flow.map(fn {a, b, _, _} -> {a, b} end)
+          |> Flow.flat_map(fn {a, b, _, _} -> [{a, b}, {b, a}] end)
           |> Enum.to_list
-        IO.puts("#{victim_count + 1}/#{victim_count + 1}")
+        IO.puts("Average #{Float.round(length(relations)/(victim_count*2), 2)} connections per node")
 
         for {a, b} <- relations do
           {dx, dy} = distance(person_count, a, b)
           delta = round(:math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2)))
           probability = (person_count / (100 * delta)) * infection_rate
           Person.add_link(victims[a], victims[b], probability)
-          Person.add_link(victims[b], victims[a], probability)
         end
 
-        for i <- 0..min(5, length(victims_list) - 1) do
+        for i <- 0..(initial_infected-1) do
           Person.infect(victims[i], 1)
         end
-        %{victims: victims, relations: relations}
+        %{victims: victims, relations: Enum.filter(relations, fn {a, b} -> a < b end)}
       end
     )
   end

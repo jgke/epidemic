@@ -46,8 +46,8 @@ defmodule EpidemicTest do
     infection_rate = 1
     person_count_sq = 70
     person_count = person_count_sq * person_count_sq
-    link_count = 2
-    {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, person_count_sq, link_count)
+    link_count = 3
+    {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, person_count_sq, link_count, 5)
     IO.puts("Interacting")
     for step <- 1..120 do
       infected = Simulator.infected_count(pid)
