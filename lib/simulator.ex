@@ -45,11 +45,11 @@ defmodule Simulator do
           |> Flow.filter(fn {a, b, px, py} -> a != b and px and py end)
           |> Flow.flat_map(fn {a, b, _, _} -> [{a, b}, {b, a}] end)
           |> Enum.to_list
-        IO.puts("Average #{Float.round(length(relations)/(victim_count*2), 2)} connections per node")
+        #IO.puts("Average #{Float.round(length(relations)/(victim_count*2), 2)} connections per node")
 
         for {a, b} <- relations do
           {dx, dy} = distance(person_count, a, b)
-          delta = round(:math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2)))
+          delta = :math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2))
           probability = (person_count / (100 * delta)) * infection_rate
           Person.add_link(victims[a], victims[b], probability)
         end
@@ -63,11 +63,13 @@ defmodule Simulator do
   end
 
   def step(self) do
+    count = infected_count(self)
     Agent.get(
       self,
       fn state ->
+        probability = if count > 0.2 * length(Map.keys(state[:victims])) do 0.99 else 0.999 end
         Map.values(state[:victims])
-        |> Enum.flat_map(&Person.interact/1)
+        |> Enum.flat_map(&Person.interact(&1, probability))
         |> Enum.map(fn {pid, p} -> Person.infect(pid, p) end)
         :ok
       end

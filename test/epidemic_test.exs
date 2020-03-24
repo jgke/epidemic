@@ -20,7 +20,7 @@ defmodule EpidemicTest do
     Person.infect(pid, 1)
 
     for _ <- 1..15 do
-      Person.interact(pid)
+      Person.interact(pid, 0)
     end
 
     false = Person.is_infected(pid)
@@ -36,7 +36,7 @@ defmodule EpidemicTest do
 
     false = Person.is_infected(p2)
     Person.infect(p1, 1)
-    assert Person.interact(p1) == %{p2 => 1}
+    assert Person.interact(p1, 0) == %{p2 => 1}
   end
 
 
@@ -44,7 +44,7 @@ defmodule EpidemicTest do
   test "Simulator runs" do
     IO.puts("Creating simulator")
     infection_rate = 1
-    person_count_sq = 70
+    person_count_sq = 100
     person_count = person_count_sq * person_count_sq
     link_count = 3
     {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, person_count_sq, link_count, 5)

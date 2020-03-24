@@ -36,16 +36,16 @@ defmodule Person do
     )
   end
 
-  defp step_infection(state) do
+  defp step_infection(state, survival_probability) do
     roll = :rand.uniform()
-    if roll > 0.999 do
+    if roll > survival_probability do
       %{state | dead: true}
     else
       %{state | cured_at: state[:cured_at] - 1}
     end
   end
 
-  def interact(self) do
+  def interact(self, survival_probability) do
     Agent.get_and_update(
       self,
       fn state ->
@@ -54,7 +54,7 @@ defmodule Person do
           state[:infected] and state[:cured_at] == 0 ->
             {[], %{state | infected: false, immune: true}}
           state[:infected] ->
-            {state[:connections], step_infection(state)}
+            {state[:connections], step_infection(state, survival_probability)}
           true -> {[], state}
         end
       end

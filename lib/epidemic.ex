@@ -36,38 +36,18 @@ defmodule Epidemic do
     Graphvix.Graph.write(complete_graph, filename)
   end
 
-  def main(args \\ []) do
-    {person_count_sqrt, _} = Integer.parse(Enum.at(args, 0))
-    person_count = round(:math.pow(person_count_sqrt, 2))
-    {link_count, _} = Integer.parse(Enum.at(args, 1))
-    {steps, _} = Integer.parse(Enum.at(args, 2))
-    {infection_rate, _} = Float.parse(Enum.at(args, 3))
-    output_graph = Enum.at(args, 4) == "true"
-
-    IO.puts("Creating simulator with #{person_count} nodes")
-    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count, 1)
-    IO.puts("\nInteracting")
-    if output_graph do
-      draw_graph(
-        pid,
-        "out/#{
-          0
-          |> Integer.to_string
-          |> String.pad_leading(3, "0")
-        }_graph"
-      )
-    end
-    for step <- 1..steps do
+  def step(pid, person_count, step, output_graph) do
       infected = Simulator.infected_count(pid)
       dead = Simulator.dead_count(pid)
       immune = Simulator.immune_count(pid)
       death_rate = dead / (dead + immune + infected)
       contact_rate = (dead + immune + infected) / person_count
-      IO.puts(
-        "Day #{step}: #{Float.round(contact_rate * 100, 2)}% have contacted disease, #{infected} infected persons, #{
-          dead
-        } deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%"
-      )
+      #IO.puts(
+      #  "Day #{step}: #{Float.round(contact_rate * 100, 2)}% have contacted disease, #{infected} infected persons, #{
+      #    dead
+      #  } deaths, #{immune} immune, death rate #{Float.round(death_rate * 100, 2)}%"
+      #)
+      IO.puts("#{step}, #{person_count}, #{dead + immune + infected}, #{immune + infected}, #{immune}")
       Simulator.step(pid)
       if output_graph do
         draw_graph(
@@ -79,7 +59,33 @@ defmodule Epidemic do
           }_graph"
         )
       end
+   if infected > 0 do
+    step(pid, person_count, step+1, output_graph)
+   end
+  end
+
+  def main(args \\ []) do
+    {person_count_sqrt, _} = Integer.parse(Enum.at(args, 0))
+    person_count = round(:math.pow(person_count_sqrt, 2))
+    {link_count, _} = Integer.parse(Enum.at(args, 1))
+    {infection_rate, _} = Float.parse(Enum.at(args, 3))
+    output_graph = Enum.at(args, 4) == "true"
+
+    #IO.puts("Creating simulator with #{person_count} nodes")
+    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count, 1)
+    #IO.puts("\nInteracting")
+    if output_graph do
+      draw_graph(
+        pid,
+        "out/#{
+          0
+          |> Integer.to_string
+          |> String.pad_leading(3, "0")
+        }_graph"
+      )
     end
-    IO.puts("Done")
+    IO.puts("step,total,dead,infected,immune")
+    step(pid, person_count, 1, output_graph)
+    #IO.puts("Done")
   end
 end
