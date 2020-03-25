@@ -40,8 +40,8 @@ defmodule Epidemic do
       infected = Simulator.infected_count(pid)
       dead = Simulator.dead_count(pid)
       immune = Simulator.immune_count(pid)
-      death_rate = dead / (dead + immune + infected)
-      contact_rate = (dead + immune + infected) / person_count
+      #death_rate = dead / (dead + immune + infected)
+      #contact_rate = (dead + immune + infected) / person_count
       #IO.puts(
       #  "Day #{step}: #{Float.round(contact_rate * 100, 2)}% have contacted disease, #{infected} infected persons, #{
       #    dead
@@ -67,12 +67,11 @@ defmodule Epidemic do
   def main(args \\ []) do
     {person_count_sqrt, _} = Integer.parse(Enum.at(args, 0))
     person_count = round(:math.pow(person_count_sqrt, 2))
-    {link_count, _} = Integer.parse(Enum.at(args, 1))
-    {infection_rate, _} = Float.parse(Enum.at(args, 3))
-    output_graph = Enum.at(args, 4) == "true"
+    {infection_rate, _} = Float.parse(Enum.at(args, 1))
+    output_graph = Enum.at(args, 2) == "true"
 
     #IO.puts("Creating simulator with #{person_count} nodes")
-    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, link_count, 1)
+    {:ok, pid} = Simulator.start_link(:rand.uniform(10000), infection_rate, person_count_sqrt, 3, 1)
     #IO.puts("\nInteracting")
     if output_graph do
       draw_graph(

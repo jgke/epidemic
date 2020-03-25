@@ -44,7 +44,7 @@ defmodule EpidemicTest do
   test "Simulator runs" do
     IO.puts("Creating simulator")
     infection_rate = 1
-    person_count_sq = 100
+    person_count_sq = 30
     person_count = person_count_sq * person_count_sq
     link_count = 3
     {:ok, pid} = Simulator.start_link(get_seed(), infection_rate, person_count_sq, link_count, 5)
